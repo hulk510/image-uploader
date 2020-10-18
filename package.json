@@ -8,8 +8,13 @@
     "start": "next start"
   },
   "dependencies": {
+    "@material-ui/core": "^4.11.0",
+    "@svgr/webpack": "^5.4.0",
+    "axios": "^0.20.0",
+    "formidable": "^1.2.2",
     "next": "9.5.4",
     "react": "16.13.1",
-    "react-dom": "16.13.1"
+    "react-dom": "16.13.1",
+    "react-dropzone": "^11.2.0"
   }
 }
