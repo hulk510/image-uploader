@@ -3,7 +3,7 @@ import styles from '../styles/Home.module.css'
 import Svg from '../public/uploadImage.svg'
 
 // form系の奴はもうtextfieldで全部できるみたい。
-import { Typography, Button, LinearProgress } from '@material-ui/core'
+import { Typography, Button } from '@material-ui/core'
 import { makeStyles } from '@material-ui/styles'
 
 const useStyle = makeStyles({
@@ -54,7 +54,6 @@ const useStyle = makeStyles({
 })
 
 export default function ImageForm({
-  fileInfo,
   onChangeHandler,
   getRootProps,
   getInputProps,
@@ -69,19 +68,12 @@ export default function ImageForm({
       <div {...getRootProps()}>
         <input {...getInputProps()} accept="image/*" />
         <div className={classes.area}>
-          {fileInfo ? (
-            // URLってなんなんやろうdocumentみたいなやつかな。
-            <img src={fileInfo.file.path.split('public/').join('')} width="300" />
-          ) : (
-              <>
-                <Svg />
-                <Typography className={classes.text}>
-                  {
-                    isDragActive ? ("Drop the files here ...") : ("Drag & Drop your image here")
-                  }
-                </Typography>
-              </>
-            )}
+          <Svg />
+          <Typography className={classes.text}>
+            {
+              isDragActive ? ("Drop the files here ...") : ("Drag & Drop your image here")
+            }
+          </Typography>
         </div>
       </div>
       <Typography className={classes.text} style={{ marginBottom: "32px" }}>Or</Typography>

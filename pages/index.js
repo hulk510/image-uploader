@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { post } from 'axios'
-import ImageForm from '../components/ImageForm'
 // form系の奴はもうtextfieldで全部できるみたい。
-import { Grid, Card, CardContent } from '@material-ui/core'
+import { Grid, Card, CardContent, LinearProgress } from '@material-ui/core'
 import { makeStyles } from '@material-ui/styles'
+import ImageForm from '../components/ImageForm'
+import SuccessImage from '../components/SuccessImage'
 
 const useStyle = makeStyles({
   card: {
@@ -19,6 +20,7 @@ export default function Home() {
   const [file, setFile] = useState(null)
   const [fileInfo, setFileInfo] = useState(null)
   const [progress, setProgress] = useState(0)
+  const [success, setSuccess] = useState(false)
   const onDrop = useCallback(acceptedFiles => {
     const f = acceptedFiles[0]
     setFile(f)
@@ -34,14 +36,13 @@ export default function Home() {
   function upload() {
     setProgress(0);
     fileUpload(file, (event) => {
-      console.log(event.loaded)
-      console.log(event.total)
-      console.log(Math.round((100 * event.loaded) / event.total))
+      setProgress(Math.round((100 * event.loaded) / event.total))
     }).then((response) => {
-      // ここで更新するから一生走る。
+      // ここでsetFileの方を更新するからfileのstateが変わってuseeffect一生走る。から違うstateに入れる。
       // 一回更新したら更新しないようにしないとあかんけど更新してfileが変わったらupload methodが走るから一緒
       setFileInfo(response.data.files)
-      console.log(response.data);
+      setProgress(0)
+      setSuccess(true)
     }).catch(() => {
       setProgress(0)
     })
@@ -76,7 +77,6 @@ export default function Home() {
     return post(url, formData, config)
   }
   return (
-    // form よくわかってない。
     <Grid container
       justify="center"
       alignItems="center"
@@ -85,16 +85,19 @@ export default function Home() {
       <Grid item>
         <Card className={classes.card}>
           <CardContent>
-            <ImageForm
-              fileInfo={fileInfo}
-              onChangeHandler={onChange}
-              getRootProps={getRootProps}
-              getInputProps={getInputProps}
-              isDragActive={isDragActive}
-            />
-            {/* <div>
-          <LinearProgress variant="determinate" value={progress} />
-        </div> */}
+            {success ? (
+              <SuccessImage
+                fileInfo={fileInfo}
+              />
+            ) : (
+                <ImageForm
+                  fileInfo={fileInfo}
+                  onChangeHandler={onChange}
+                  getRootProps={getRootProps}
+                  getInputProps={getInputProps}
+                  isDragActive={isDragActive}
+                />
+              )}
           </CardContent>
         </Card>
       </Grid>
