@@ -1,65 +1,103 @@
-import Head from 'next/head'
-import styles from '../styles/Home.module.css'
+import React, { useCallback, useEffect, useState } from 'react'
+import { useDropzone } from 'react-dropzone'
+import { post } from 'axios'
+import ImageForm from '../components/ImageForm'
+// form系の奴はもうtextfieldで全部できるみたい。
+import { Grid, Card, CardContent } from '@material-ui/core'
+import { makeStyles } from '@material-ui/styles'
+
+const useStyle = makeStyles({
+  card: {
+    padding: "1rem",
+    boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
+    borderRadius: "12px",
+  }
+})
 
 export default function Home() {
+  const classes = useStyle()
+  const [file, setFile] = useState(null)
+  const [fileInfo, setFileInfo] = useState(null)
+  const [progress, setProgress] = useState(0)
+  const onDrop = useCallback(acceptedFiles => {
+    const f = acceptedFiles[0]
+    setFile(f)
+  }, [])
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop })
+
+  useEffect(() => {
+    if (file) {
+      upload()
+    }
+  }, [file])
+
+  function upload() {
+    setProgress(0);
+    fileUpload(file, (event) => {
+      console.log(event.loaded)
+      console.log(event.total)
+      console.log(Math.round((100 * event.loaded) / event.total))
+    }).then((response) => {
+      // ここで更新するから一生走る。
+      // 一回更新したら更新しないようにしないとあかんけど更新してfileが変わったらupload methodが走るから一緒
+      setFileInfo(response.data.files)
+      console.log(response.data);
+    }).catch(() => {
+      setProgress(0)
+    })
+  }
+  // function onSubmit(e) {
+  //   e.preventDefault() // これでsubmitイベントを止めてるんか
+  //   fileUpload(file).then((response) => {
+  //     console.log(response.data);
+  //   })
+  // }
+  function onChange(e) {
+    const f = e.target.files[0]
+    setFile(f)
+  }
+
+  function fileUpload(file, onUploadProgress) {
+    // こうやって書いてしまうと非同期でreturnしてないからエラーになる。
+    // けどfileない時をどうやって判断したらいいのか。
+    // if (!file) {
+    //   return
+    // }
+    const url = 'http://localhost:3000/api/upload-image';
+    const formData = new FormData();
+    formData.append('file', file)
+    const config = {
+      headers: {
+        'content-type': 'multipart/form-data'
+      },
+      // なんやこれ
+      onUploadProgress
+    }
+    return post(url, formData, config)
+  }
   return (
-    <div className={styles.container}>
-      <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-
-      <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
-
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
-
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className={styles.logo} />
-        </a>
-      </footer>
-    </div>
+    // form よくわかってない。
+    <Grid container
+      justify="center"
+      alignItems="center"
+      style={{ height: "100vh" }}
+    >
+      <Grid item>
+        <Card className={classes.card}>
+          <CardContent>
+            <ImageForm
+              fileInfo={fileInfo}
+              onChangeHandler={onChange}
+              getRootProps={getRootProps}
+              getInputProps={getInputProps}
+              isDragActive={isDragActive}
+            />
+            {/* <div>
+          <LinearProgress variant="determinate" value={progress} />
+        </div> */}
+          </CardContent>
+        </Card>
+      </Grid>
+    </Grid >
   )
 }
