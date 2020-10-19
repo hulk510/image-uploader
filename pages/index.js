@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState, useReducer } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { post } from 'axios'
 // form系の奴はもうtextfieldで全部できるみたい。
@@ -6,6 +6,40 @@ import { Grid, Card, CardContent, LinearProgress } from '@material-ui/core'
 import { makeStyles } from '@material-ui/styles'
 import ImageForm from '../components/ImageForm'
 import SuccessImage from '../components/SuccessImage'
+
+const initialState = {
+  file: null,
+  fileInfo: null,
+  progress: 0,
+  success: false
+}
+
+const reducer = (state, action) => {
+  switch (action.type) {
+    case 'FILE_UPLOAD_REQUEST':
+      return {
+        progress: Math.round((100 * action.event.loaded) / action.event.total)
+      }
+    case 'FILE_UPLOAD_SUCCESS':
+      return {
+        ...state,
+        fileInfo: action.files,
+        progress: 0,
+        success: true
+      }
+    case 'FILE_UPLOAD_FAILURE':
+      return {
+        ...state,
+        progress: 0,
+        fileInfo: null,
+        success: false
+      }
+    case 'CHANGE_IMAGE_FILE':
+      return {
+        file: action.file
+      }
+  }
+}
 
 const useStyle = makeStyles({
   card: {
@@ -17,13 +51,11 @@ const useStyle = makeStyles({
 
 export default function Home() {
   const classes = useStyle()
-  const [file, setFile] = useState(null)
-  const [fileInfo, setFileInfo] = useState(null)
-  const [progress, setProgress] = useState(0)
-  const [success, setSuccess] = useState(false)
+  const [props, dispatch] = useReducer(reducer, initialState)
+  const { file, fileInfo, progress, success } = props
   const onDrop = useCallback(acceptedFiles => {
     const f = acceptedFiles[0]
-    setFile(f)
+    dispatch({ type: 'CHANGE_IMAGE_FILE', file: f })
   }, [])
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop })
 
@@ -34,28 +66,17 @@ export default function Home() {
   }, [file])
 
   function upload() {
-    setProgress(0);
     fileUpload(file, (event) => {
-      setProgress(Math.round((100 * event.loaded) / event.total))
+      dispatch({ type: 'FILE_UPLOAD_REQUEST', event: event })
     }).then((response) => {
-      // ここでsetFileの方を更新するからfileのstateが変わってuseeffect一生走る。から違うstateに入れる。
-      // 一回更新したら更新しないようにしないとあかんけど更新してfileが変わったらupload methodが走るから一緒
-      setFileInfo(response.data.files)
-      setProgress(0)
-      setSuccess(true)
+      dispatch({ type: 'FILE_UPLOAD_SUCCESS', files: response.data.files })
     }).catch(() => {
-      setProgress(0)
+      dispatch({ type: 'FILE_UPLOAD_FAILURE' })
     })
   }
-  // function onSubmit(e) {
-  //   e.preventDefault() // これでsubmitイベントを止めてるんか
-  //   fileUpload(file).then((response) => {
-  //     console.log(response.data);
-  //   })
-  // }
   function onChange(e) {
     const f = e.target.files[0]
-    setFile(f)
+    dispatch({ type: 'CHANGE_IMAGE_FILE', file: f })
   }
 
   function fileUpload(file, onUploadProgress) {
